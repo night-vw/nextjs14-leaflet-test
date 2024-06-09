@@ -1,11 +1,18 @@
 "use client"
 import { useEffect, useRef, useState, useCallback } from 'react';
+import Image from 'next/image';
 import L from 'leaflet';
+import { LatLngTuple, latLng } from 'leaflet';
 import { FaSearch, FaTimes } from "react-icons/fa";
 import { FiPlus } from "react-icons/fi";
 import { BiCurrentLocation } from "react-icons/bi";
 import { BsX } from "react-icons/bs";
 import 'leaflet/dist/leaflet.css';
+import map_pinIcon from '@/public/map_pin-icon.png'; // 画像ファイルのインポート
+import workIcon from '@/public/work-icon.png'; // 画像ファイルのインポート
+import exerciseIcon from '@/public/exercise-icon.png'; // 画像ファイルのインポート
+import foodIcon from '@/public/food-icon.png'; // 画像ファイルのインポート
+import shoppingIcon from '@/public/shopping-icon.png'; // 画像ファイルのインポート
 
 const MapComponent = () => {
   const mapRef = useRef<L.Map | null>(null);
@@ -15,6 +22,9 @@ const MapComponent = () => {
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [addingMarker, setAddingMarker] = useState(false);
   const [userMarker, setUserMarker] = useState<L.Marker | null>(null);
+  const [activeIcon, setActiveIcon] = useState('map_pinIcon'); // ステートの追加
+  const [markerPlaced, setMarkerPlaced] = useState(false); // マーカーが配置されたかどうかのステート
+  const [markerUrl, setMarkerUrl] = useState('/map_pin-icon.png'); // marker_urlをステートに変更
   let marker_add_check = false;
 
   useEffect(() => {
@@ -48,14 +58,18 @@ const MapComponent = () => {
 
         if (mapRef.current) {
           mapRef.current.setView([latitude, longitude], 16);
+        
           const currentLocationMarker = L.circleMarker([latitude, longitude], {
-            color: '#1E90FF',
-            radius: 8,
-            fillOpacity: 0.5,
+            color: '#FFFFFF', // 枠の色を白に設定
+            fillColor: '#0476D9', // 中の色を青に設定
+            radius: 15,
+            fillOpacity: 1,
+            weight: 5
           }).addTo(mapRef.current)
             .bindPopup('You are here!')
             .openPopup();
-        }
+        }        
+        
       };
 
       const error = () => {
@@ -153,6 +167,9 @@ const MapComponent = () => {
   const clearSearch = () => {
     setSearchQuery('');
     setSuggestions([]);
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
   };
 
   const moveToCurrentLocation = () => {
@@ -161,8 +178,23 @@ const MapComponent = () => {
         (position) => {
           const { latitude, longitude } = position.coords;
           if (mapRef.current) {
-            //現在地に移動する
-            mapRef.current.flyTo([latitude, longitude], 16);
+            const currentLocation: LatLngTuple = [latitude, longitude];
+            const mapBounds = mapRef.current.getBounds();
+            const mapCenter = mapRef.current.getCenter();
+            const mapCenterLatLng = latLng(mapCenter.lat, mapCenter.lng);
+  
+            // 現在の中心から現在地までの距離を計算
+            const distance = mapCenterLatLng.distanceTo(latLng(latitude, longitude));
+            const zoomLevel = mapRef.current.getZoom();
+  
+            // 距離が遠い場合の閾値（単位はメートル）
+            const distanceThreshold = 500; // この値は適宜調整してください
+  
+            if (mapBounds.contains(currentLocation) && distance < distanceThreshold) {
+              mapRef.current.flyTo(currentLocation, zoomLevel);
+            } else {
+              mapRef.current.setView(currentLocation, 16);
+            }
           }
         },
         () => {
@@ -174,7 +206,7 @@ const MapComponent = () => {
       alert("Geolocation is not supported by this browser.");
     }
   };
-
+  
   const toggleAddMarker = () => {
     setAddingMarker(!addingMarker);
     if (userMarker) {
@@ -182,13 +214,14 @@ const MapComponent = () => {
       setUserMarker(null);
       marker_add_check = false;
     }
+    setMarkerPlaced(false); // マーカー追加のたびに非表示フラグをリセット
   };
 
   const handleMapClick = async (e: L.LeafletMouseEvent) => {
     if (addingMarker && mapRef.current) {
       const customIcon = L.icon({
-        iconUrl: '/marker-icon.png',
-        iconSize: [38, 38],
+        iconUrl: markerUrl,
+        iconSize: [60, 60],
         iconAnchor: [22, 38],
         popupAnchor: [-3, -38],
       });
@@ -199,6 +232,7 @@ const MapComponent = () => {
           .openPopup();
         setUserMarker(marker);
         marker_add_check = true;
+        setMarkerPlaced(true); // マーカー配置フラグを設定
       }
 
     }
@@ -213,7 +247,32 @@ const MapComponent = () => {
         mapRef.current.off('click', handleMapClick);
       }
     };
-  }, [addingMarker]);
+  }, [addingMarker, markerUrl]);
+
+  const map_pinIconClick = ()=>{
+    setMarkerUrl('/map_pin-icon.png');
+    setActiveIcon('map_pinIcon');
+  }
+
+  const workIconClick = ()=>{
+    setMarkerUrl('/work-icon.png');
+    setActiveIcon('workIcon');
+  }
+
+  const exerciseIconClick = ()=>{
+    setMarkerUrl('/exercise-icon.png');
+    setActiveIcon('exerciseIcon');
+  }
+
+  const foodIconClick = ()=>{
+    setMarkerUrl('/food-icon.png');
+    setActiveIcon('foodIcon');
+  }
+
+  const shoppingIconClick = ()=>{
+    setMarkerUrl('/shopping-icon.png');
+    setActiveIcon('shoppingIcon');
+  }
 
   return (
     <div className="relative w-full h-screen">
@@ -226,13 +285,13 @@ const MapComponent = () => {
             ref={inputRef}
             className="text-lg w-full p-2 rounded-l-lg mr-0 border-2 text-gray-800 border-indigo-300 bg-white opacity-85"
             placeholder="マップ検索する"
-            style={{ willChange: 'transform' }} // will-change プロパティを追加
+            style={{ willChange: 'transform' }}
           />
           {searchQuery && (
             <button
               type="button"
               onClick={clearSearch}
-              className="absolute right-14 top-2/4 transform -translate-y-2/4 p-1 text-gray-500 hover:text-gray-700"
+              className="absolute right-10 top-2/4 transform -translate-y-2/4 p-1 text-gray-500 hover:text-gray-700"
             >
               <FaTimes />
             </button>
@@ -240,22 +299,23 @@ const MapComponent = () => {
           <button
             type="submit"
             className="p-2 rounded-r-lg bg-indigo-500 text-white border-indigo-300 border-t border-b border-r opacity-90"
-          ><FaSearch />
+          >
+            <FaSearch />
           </button>
-          {searchQuery && suggestions.length > 0 && (
-            <ul className="absolute top-full left-0 w-full bg-white border border-gray-200 z-10 max-h-60 overflow-auto">
-              {suggestions.map((suggestion: any, index: number) => (
-                <li
-                  key={index}
-                  className="p-2 cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSuggestionClick(suggestion.lat, suggestion.lon, suggestion.display_name)}
-                >
-                  {suggestion.display_name}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
+        {searchQuery && suggestions.length > 0 && (
+          <ul className="absolute top-full left-0 w-full bg-white border border-gray-200 z-10 max-h-60 overflow-auto">
+            {suggestions.map((suggestion: any, index: number) => (
+              <li
+                key={index}
+                className="p-2 cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSuggestionClick(suggestion.lat, suggestion.lon, suggestion.display_name)}
+              >
+                {suggestion.display_name}
+              </li>
+            ))}
+          </ul>
+        )}
       </form>
       <div id="map" className="w-full h-full z-10"></div>
       <button
@@ -268,8 +328,42 @@ const MapComponent = () => {
         onClick={toggleAddMarker}
         className="absolute bottom-24 right-8 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20"
       >
-        {addingMarker ? <BsX size={40} /> : <FiPlus size={40} />}
+      {addingMarker ? <BsX size={40} /> : <FiPlus size={40} />}
       </button>
+      {addingMarker && !markerPlaced && (
+        <>
+        <button
+          onClick={shoppingIconClick}
+          className={`absolute bottom-44 right-8 p-3 ${activeIcon === 'shoppingIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+        >
+          <Image src={shoppingIcon} alt="shopping Marker" className="w-10 h-10" />
+        </button>
+        <button
+          onClick={foodIconClick}
+          className={`absolute bottom-64 right-8 p-3 ${activeIcon === 'foodIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+        >
+          <Image src={foodIcon} alt="food Marker" className="w-10 h-10" />
+        </button>
+        <button
+          onClick={exerciseIconClick}
+          className={`absolute bottom-84 right-8 p-3 ${activeIcon === 'exerciseIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+        >
+          <Image src={exerciseIcon} alt="exercise Marker" className="w-10 h-10" />
+        </button>
+        <button
+          onClick={workIconClick}
+          className={`absolute bottom-104 right-8 p-3 ${activeIcon === 'workIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+        >
+          <Image src={workIcon} alt="work Marker" className="w-10 h-10" />
+        </button>
+        <button
+          onClick={map_pinIconClick}
+          className={`absolute bottom-124 right-8 p-3 ${activeIcon === 'map_pinIcon' ? 'bg-rose-500' : 'bg-sky-500'} text-white rounded-full shadow-lg hover:bg-rose-600 focus:outline-none z-20`}
+        >
+          <Image src={map_pinIcon} alt="map_pin Marker" className="w-10 h-10" />
+        </button>
+        </>
+      )}
     </div>
   );
 };
