@@ -7,12 +7,13 @@ import { FaSearch, FaTimes } from "react-icons/fa";
 import { FiPlus } from "react-icons/fi";
 import { BiCurrentLocation } from "react-icons/bi";
 import { BsX } from "react-icons/bs";
+import { MdAddTask } from "react-icons/md";
 import 'leaflet/dist/leaflet.css';
-import map_pinIcon from '@/public/map_pin-icon.png'; // 画像ファイルのインポート
-import workIcon from '@/public/work-icon.png'; // 画像ファイルのインポート
-import exerciseIcon from '@/public/exercise-icon.png'; // 画像ファイルのインポート
-import foodIcon from '@/public/food-icon.png'; // 画像ファイルのインポート
-import shoppingIcon from '@/public/shopping-icon.png'; // 画像ファイルのインポート
+import map_pinIcon from '@/public/map_pin-icon.png';
+import workIcon from '@/public/work-icon.png';
+import exerciseIcon from '@/public/exercise-icon.png';
+import foodIcon from '@/public/food-icon.png';
+import shoppingIcon from '@/public/shopping-icon.png';
 
 const MapComponent = () => {
   const mapRef = useRef<L.Map | null>(null);
@@ -22,10 +23,41 @@ const MapComponent = () => {
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [addingMarker, setAddingMarker] = useState(false);
   const [userMarker, setUserMarker] = useState<L.Marker | null>(null);
-  const [activeIcon, setActiveIcon] = useState('map_pinIcon'); // ステートの追加
-  const [markerPlaced, setMarkerPlaced] = useState(false); // マーカーが配置されたかどうかのステート
-  const [markerUrl, setMarkerUrl] = useState('/map_pin-icon.png'); // marker_urlをステートに変更
+  const [activeIcon, setActiveIcon] = useState('map_pinIcon');
+  const [markerPlaced, setMarkerPlaced] = useState(false);
+  const [markerUrl, setMarkerUrl] = useState('/map_pin-icon.png');
+  const [formVisible, setFormVisible] = useState(false);
   let marker_add_check = false;
+  const [currentDateTime, setCurrentDateTime] = useState('');
+
+  useEffect(() => {
+    const now = new Date();
+    // 日本時間 (JST) オフセットは UTC+9
+    const jstTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+    const year = jstTime.getFullYear();
+    const month = String(jstTime.getMonth() + 1).padStart(2, '0');
+    const day = String(jstTime.getDate()).padStart(2, '0');
+    const hours = String(jstTime.getHours()).padStart(2, '0');
+    const minutes = String(jstTime.getMinutes()).padStart(2, '0');
+    
+    const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    setCurrentDateTime(formattedDateTime);
+    console.log(formattedDateTime)
+  }, []);
+  
+  
+
+  // Disable vertical scroll
+  useEffect(() => {
+    const preventDefault = (e: Event) => e.preventDefault();
+    window.addEventListener('wheel', preventDefault, { passive: false });
+    window.addEventListener('touchmove', preventDefault, { passive: false });
+
+    return () => {
+      window.removeEventListener('wheel', preventDefault);
+      window.removeEventListener('touchmove', preventDefault);
+    };
+  }, []);
 
   useEffect(() => {
     if (mapRef.current === null) {
@@ -60,8 +92,8 @@ const MapComponent = () => {
           mapRef.current.setView([latitude, longitude], 16);
         
           const currentLocationMarker = L.circleMarker([latitude, longitude], {
-            color: '#FFFFFF', // 枠の色を白に設定
-            fillColor: '#0476D9', // 中の色を青に設定
+            color: '#FFFFFF',
+            fillColor: '#0476D9',
             radius: 15,
             fillOpacity: 1,
             weight: 5
@@ -183,12 +215,10 @@ const MapComponent = () => {
             const mapCenter = mapRef.current.getCenter();
             const mapCenterLatLng = latLng(mapCenter.lat, mapCenter.lng);
   
-            // 現在の中心から現在地までの距離を計算
             const distance = mapCenterLatLng.distanceTo(latLng(latitude, longitude));
             const zoomLevel = mapRef.current.getZoom();
   
-            // 距離が遠い場合の閾値（単位はメートル）
-            const distanceThreshold = 500; // この値は適宜調整してください
+            const distanceThreshold = 500;
   
             if (mapBounds.contains(currentLocation) && distance < distanceThreshold) {
               mapRef.current.flyTo(currentLocation, zoomLevel);
@@ -213,8 +243,10 @@ const MapComponent = () => {
       mapRef.current?.removeLayer(userMarker);
       setUserMarker(null);
       marker_add_check = false;
+      setFormVisible(false)
     }
-    setMarkerPlaced(false); // マーカー追加のたびに非表示フラグをリセット
+    setMarkerPlaced(false);
+    setFormVisible(false);
   };
 
   const handleMapClick = async (e: L.LeafletMouseEvent) => {
@@ -232,7 +264,8 @@ const MapComponent = () => {
           .openPopup();
         setUserMarker(marker);
         marker_add_check = true;
-        setMarkerPlaced(true); // マーカー配置フラグを設定
+        setMarkerPlaced(true);
+        setFormVisible(true);
       }
 
     }
@@ -320,7 +353,7 @@ const MapComponent = () => {
       <div id="map" className="w-full h-full z-10"></div>
       <button
         onClick={moveToCurrentLocation}
-        className="absolute bottom-20 left-1/2 transform -translate-x-1/2 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20"
+        className="absolute bottom-24 left-1/2 transform -translate-x-1/2 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20"
       >
         <BiCurrentLocation size={40} />
       </button>
@@ -363,6 +396,43 @@ const MapComponent = () => {
           <Image src={map_pinIcon} alt="map_pin Marker" className="w-10 h-10" />
         </button>
         </>
+      )}
+      {formVisible && (
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-11/12 md:w-1/2 p-4 bg-white bg-opacity-90 shadow-lg rounded-lg z-30">
+          <button
+            onClick={toggleAddMarker}
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+          >
+            <FaTimes />
+          </button>
+          <form>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">タスク名</label>
+              <input type="text" className="w-full p-2 border rounded-lg" />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">詳細/説明</label>
+              <textarea className="w-full p-2 border rounded-lg"></textarea>
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">期限</label>
+              <input type="datetime-local" value={currentDateTime} className="w-full p-2 border rounded-lg" />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">優先度</label>
+              <select className="w-full p-2 border rounded-lg">
+                <option value="high">高</option>
+                <option value="medium" selected>中</option>
+                <option value="low">低</option>
+              </select>
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">場所の詳細</label>
+              <textarea className="w-full p-2 border rounded-lg"></textarea>
+            </div>
+            <button type="submit" className="w-full p-2 bg-indigo-500 text-white rounded-lg">タスクを保存する</button>
+          </form>
+        </div>
       )}
     </div>
   );
