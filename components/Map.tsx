@@ -7,7 +7,6 @@ import { FaSearch, FaTimes } from "react-icons/fa";
 import { FiPlus } from "react-icons/fi";
 import { BiCurrentLocation } from "react-icons/bi";
 import { BsX } from "react-icons/bs";
-import { MdAddTask } from "react-icons/md";
 import 'leaflet/dist/leaflet.css';
 import map_pinIcon from '@/public/map_pin-icon.png';
 import workIcon from '@/public/work-icon.png';
@@ -29,6 +28,8 @@ const MapComponent = () => {
   const [formVisible, setFormVisible] = useState(false);
   let marker_add_check = false;
   const [currentDateTime, setCurrentDateTime] = useState('');
+  const [selectedOption, setSelectedOption] = useState('on');
+  const [isDisabled, setIsDisabled] = useState(true);
 
   useEffect(() => {
     const now = new Date();
@@ -260,8 +261,6 @@ const MapComponent = () => {
 
       if (marker_add_check == false) {
         const marker = L.marker(e.latlng, { icon: customIcon }).addTo(mapRef.current)
-          .bindPopup('Custom Marker')
-          .openPopup();
         setUserMarker(marker);
         marker_add_check = true;
         setMarkerPlaced(true);
@@ -306,6 +305,10 @@ const MapComponent = () => {
     setMarkerUrl('/shopping-icon.png');
     setActiveIcon('shoppingIcon');
   }
+
+  const handleOptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedOption(e.target.value);
+  };
 
   return (
     <div className="relative w-full h-screen">
@@ -398,7 +401,7 @@ const MapComponent = () => {
         </>
       )}
       {formVisible && (
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-11/12 md:w-1/2 p-4 bg-white bg-opacity-90 shadow-lg rounded-lg z-30">
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-11/12 md:w-1/2 p-4 bg-white bg-opacity-70 shadow-lg rounded-lg z-30">
           <button
             onClick={toggleAddMarker}
             className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
@@ -408,19 +411,42 @@ const MapComponent = () => {
           <form>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">タスク名</label>
-              <input type="text" className="w-full p-2 border rounded-lg" />
+              <input type="text" className="w-full p-2 border rounded-lg opacity-70 border-slate-700" />
             </div>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">詳細/説明</label>
-              <textarea className="w-full p-2 border rounded-lg"></textarea>
+              <textarea className="w-full p-2 border rounded-lg opacity-70 border-slate-700"></textarea>
             </div>
+          <label className="block text-gray-700 text-sm font-bold mb-2">期限あり / なし</label>
+          <div className='flex'>
+          <div className='mr-10'>
+          <label className='text-sm font-bold'>
+            <input
+              type="radio"
+              value="on"
+              checked={selectedOption === 'on'}
+              onChange={handleOptionChange}/>
+              あり
+          </label>
+          </div>
+          <div>
+            <label className='text-sm font-bold'>
+              <input
+              type="radio"
+              value="off"
+              checked={selectedOption === 'off'}
+              onChange={handleOptionChange}/>
+              なし
+            </label>
+          </div>
+        </div>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">期限</label>
-              <input type="datetime-local" value={currentDateTime} className="w-full p-2 border rounded-lg" />
+              <input type="datetime-local" value={currentDateTime} className="w-full p-2 border rounded-lg opacity-70 border-slate-700" disabled={isDisabled} />
             </div>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">優先度</label>
-              <select className="w-full p-2 border rounded-lg">
+              <select className="w-full p-2 border rounded-lg opacity-70 border-slate-700">
                 <option value="high">高</option>
                 <option value="medium" selected>中</option>
                 <option value="low">低</option>
@@ -428,9 +454,9 @@ const MapComponent = () => {
             </div>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">場所の詳細</label>
-              <textarea className="w-full p-2 border rounded-lg"></textarea>
+              <textarea className="w-full p-2 border rounded-lg opacity-70 border-slate-700"></textarea>
             </div>
-            <button type="submit" className="w-full p-2 bg-indigo-500 text-white rounded-lg">タスクを保存する</button>
+            <button type="submit" className="w-full p-2 bg-indigo-500 text-white rounded-lg opacity-80 hover:opacity-90">タスクを保存する</button>
           </form>
         </div>
       )}
