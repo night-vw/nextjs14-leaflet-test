@@ -29,7 +29,7 @@ const MapComponent = () => {
   let marker_add_check = false;
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [selectedOption, setSelectedOption] = useState('on');
-  const [isDisabled, setIsDisabled] = useState(true);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   useEffect(() => {
     const now = new Date();
@@ -307,7 +307,13 @@ const MapComponent = () => {
   }
 
   const handleOptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if(isDisabled === true) {
+      setIsDisabled(false) ;
+    }else {
+      setIsDisabled(true) ;
+    }
     setSelectedOption(e.target.value);
+    console.log(isDisabled);
   };
 
   return (
@@ -425,7 +431,8 @@ const MapComponent = () => {
               type="radio"
               value="on"
               checked={selectedOption === 'on'}
-              onChange={handleOptionChange}/>
+              onChange={handleOptionChange}
+              />
               あり
           </label>
           </div>
@@ -440,15 +447,17 @@ const MapComponent = () => {
             </label>
           </div>
         </div>
+        {!isDisabled &&
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">期限</label>
               <input type="datetime-local" value={currentDateTime} className="w-full p-2 border rounded-lg opacity-70 border-slate-700" disabled={isDisabled} />
             </div>
+          }
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">優先度</label>
               <select className="w-full p-2 border rounded-lg opacity-70 border-slate-700">
                 <option value="high">高</option>
-                <option value="medium" selected>中</option>
+                <option value="medium">中</option>
                 <option value="low">低</option>
               </select>
             </div>
