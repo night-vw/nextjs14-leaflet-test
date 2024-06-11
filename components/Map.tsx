@@ -7,6 +7,8 @@ import { FaSearch, FaTimes } from "react-icons/fa";
 import { FiPlus } from "react-icons/fi";
 import { BiCurrentLocation } from "react-icons/bi";
 import { BsX } from "react-icons/bs";
+import { IoIosList } from "react-icons/io";
+
 import 'leaflet/dist/leaflet.css';
 import map_pinIcon from '@/public/map_pin-icon.png';
 import workIcon from '@/public/work-icon.png';
@@ -99,8 +101,6 @@ const MapComponent = () => {
             fillOpacity: 1,
             weight: 5
           }).addTo(mapRef.current)
-            .bindPopup('You are here!')
-            .openPopup();
         }        
         
       };
@@ -145,7 +145,7 @@ const MapComponent = () => {
           popupAnchor: [-3, -38],
         });
         L.marker([lat, lon], { icon: customIcon }).addTo(mapRef.current)
-          .bindPopup(`Search Result: ${searchQuery}`)
+          .bindPopup(`${searchQuery}`)
           .openPopup();
       }
     } else {
@@ -174,7 +174,7 @@ const MapComponent = () => {
         popupAnchor: [-3, -38],
       });
       L.marker([lat, lon], { icon: customIcon }).addTo(mapRef.current)
-        .bindPopup(`Search Result: ${display_name}`)
+        .bindPopup(`${display_name}`)
         .openPopup();
     }
     setSuggestions([]);
@@ -372,6 +372,13 @@ const MapComponent = () => {
       >
       {addingMarker ? <BsX size={40} /> : <FiPlus size={40} />}
       </button>
+
+      <button
+        onClick={moveToCurrentLocation}
+        className="absolute bottom-24 left-16 transform -translate-x-1/2 p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 focus:outline-none z-20"
+      >
+        <IoIosList size={40} />
+      </button>
       {addingMarker && !markerPlaced && (
         <>
         <button
@@ -415,59 +422,60 @@ const MapComponent = () => {
             <FaTimes />
           </button>
           <form>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">タスク名</label>
-              <input type="text" className="w-full p-2 border rounded-lg opacity-70 border-slate-700" />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">詳細/説明</label>
-              <textarea className="w-full p-2 border rounded-lg opacity-70 border-slate-700"></textarea>
-            </div>
-          <label className="block text-gray-700 text-sm font-bold mb-2">期限あり / なし</label>
-          <div className='flex'>
-          <div className='mr-10'>
-          <label className='text-sm font-bold'>
-            <input
-              type="radio"
-              value="on"
-              checked={selectedOption === 'on'}
-              onChange={handleOptionChange}
-              />
-              あり
-          </label>
-          </div>
-          <div>
-            <label className='text-sm font-bold'>
-              <input
-              type="radio"
-              value="off"
-              checked={selectedOption === 'off'}
-              onChange={handleOptionChange}/>
-              なし
-            </label>
-          </div>
-        </div>
-        {!isDisabled &&
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">期限</label>
-              <input type="datetime-local" value={currentDateTime} className="w-full p-2 border rounded-lg opacity-70 border-slate-700" disabled={isDisabled} />
-            </div>
-          }
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">優先度</label>
-              <select className="w-full p-2 border rounded-lg opacity-70 border-slate-700">
-                <option value="high">高</option>
-                <option value="medium">中</option>
-                <option value="low">低</option>
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">場所の詳細</label>
-              <textarea className="w-full p-2 border rounded-lg opacity-70 border-slate-700"></textarea>
-            </div>
-            <button type="submit" className="w-full p-2 bg-indigo-500 text-white rounded-lg opacity-80 hover:opacity-90">タスクを保存する</button>
-          </form>
-        </div>
+  <div className="mb-4">
+    <label className="block text-gray-700 text-sm font-bold mb-2">タスク名 (30文字)</label>
+    <input type="text" maxLength={30} className="w-full p-2 border rounded-lg opacity-70 border-slate-700" />
+  </div>
+  <div className="mb-4">
+    <label className="block text-gray-700 text-sm font-bold mb-2">詳細/説明 (200文字)</label>
+    <textarea maxLength={200} className="w-full p-2 border rounded-lg opacity-70 border-slate-700"></textarea>
+  </div>
+  <label className="block text-gray-700 text-sm font-bold mb-2">期限あり / なし</label>
+  <div className='flex'>
+    <div className='mr-10'>
+      <label className='text-sm font-bold'>
+        <input
+          type="radio"
+          value="on"
+          checked={selectedOption === 'on'}
+          onChange={handleOptionChange}
+        />
+        あり
+      </label>
+    </div>
+    <div>
+      <label className='text-sm font-bold'>
+        <input
+          type="radio"
+          value="off"
+          checked={selectedOption === 'off'}
+          onChange={handleOptionChange}
+        />
+        なし
+      </label>
+      </div>
+      </div>
+      {!isDisabled &&
+    <div className="mb-4">
+      <label className="block text-gray-700 text-sm font-bold mb-2">期限</label>
+      <input type="datetime-local" value={currentDateTime} className="w-full p-2 border rounded-lg opacity-70 border-slate-700" disabled={isDisabled} />
+    </div>
+      }
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">優先度</label>
+          <select className="w-full p-2 border rounded-lg opacity-70 border-slate-700">
+            <option value="high">高</option>
+            <option value="medium">中</option>
+            <option value="low">低</option>
+          </select>
+      </div>
+    <div className="mb-4">
+    <label className="block text-gray-700 text-sm font-bold mb-2">場所の詳細 (50文字)</label>
+      <textarea maxLength={50} className="w-full p-2 border rounded-lg opacity-70 border-slate-700"></textarea>
+      </div>
+      <button type="submit" className="w-full p-2 bg-indigo-500 text-white rounded-lg opacity-80 hover:opacity-90">タスクを保存する</button>
+      </form>
+      </div>
       )}
     </div>
   );
